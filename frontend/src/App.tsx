@@ -1,30 +1,59 @@
+import { LanguageSelector } from '@/features/change-language';
 import { Editor } from '@monaco-editor/react';
-import { useEffect } from 'react';
+import { useRef, useState } from 'react';
 import io from 'socket.io-client';
+import { Button } from './shared/ui/button';
+
+const socket = io('http://localhost:3000');
 
 function App() {
-  const socket = io('http://localhost:3000');
+  const editorRef = useRef(null);
 
-  useEffect(() => {
-    socket.on('connect', () => {
-      console.log(`Connected to server with id: ${socket.id}`);
+  const [code, setCode] = useState('// Start coding here...');
+
+  const handleEditorDidMount = (editor) => {
+    editorRef.current = editor;
+    editor.focus();
+
+    socket.on('code-change', (data) => {
+      if (editorRef.current && data.code !== editorRef.current.getValue()) {
+        editorRef.current.setValue(data.code);
+      }
     });
+  };
 
-    socket.on('connect_error', (err) => {
-      console.log('Connection error: ', err);
-    });
+  const handleEditorChange = (value: string | undefined) => {
+    console.log('here is the current model value:', value);
 
-    return () => {
-      // Clean up the socket connection when the component unmounts
-      socket.disconnect();
-    };
-  }, []);
+    if (value) {
+      setCode(value);
+
+      // Emit the new code content to the server
+      socket.emit('code-change', { code: value });
+    }
+  };
 
   return (
     <div className="h-screen w-screen">
-      <Editor height="100vh" defaultLanguage="javascript" defaultValue="// some comment" />
+      <LanguageSelector />
+      <Editor
+        options={{ minimap: { enabled: false } }}
+        height="90%"
+        defaultLanguage="javascript"
+        value={code}
+        onChange={handleEditorChange}
+        onMount={handleEditorDidMount}
+        theme="vs-dark"
+      />
+      <Button>Share</Button>
     </div>
   );
 }
 
 export default App;
+
+//1. Пользователь заходит на страницу
+//2. Открывается главная страница без каких либо id
+//3. На странице на экране будет кнопка сохранить
+//4. Когда пользователь  жмет кнопку сохранить уже присваивается id и начинается слежка на автосохранением
+// 5. После того как пользователь

@@ -14,12 +14,11 @@ function App() {
 
   console.log('Current snippet: ' + currentSnippet);
 
-  // Обновляем состояние code при изменении currentSnippet
+  const [code, setCode] = useState('');
+
   useEffect(() => {
     setCode(currentSnippet);
   }, [currentSnippet]);
-
-  const [code, setCode] = useState(currentSnippet);
 
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
@@ -43,10 +42,10 @@ function App() {
       <Editor
         options={{ minimap: { enabled: false } }}
         height="90%"
-        language={lang}
-        defaultLanguage={lang}
         value={code}
         onChange={handleEditorChange}
+        language={lang}
+        defaultValue={currentSnippet}
         onMount={handleEditorDidMount}
         theme="vs-dark"
       />

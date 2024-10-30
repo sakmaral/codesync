@@ -1,25 +1,29 @@
 import { LanguageSelector } from '@/features/change-language';
 import { Editor } from '@monaco-editor/react';
-import { useRef, useState } from 'react';
+import { useUnit } from 'effector-react';
+import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
+import { $currentSnippet, $lang } from './features/change-language/model';
 import { Button } from './shared/ui/button';
 
 const socket = io('http://localhost:3000');
 
 function App() {
   const editorRef = useRef(null);
+  const [currentSnippet, lang] = useUnit([$currentSnippet, $lang]);
 
-  const [code, setCode] = useState('// Start coding here...');
+  console.log('Current snippet: ' + currentSnippet);
+
+  // Обновляем состояние code при изменении currentSnippet
+  useEffect(() => {
+    setCode(currentSnippet);
+  }, [currentSnippet]);
+
+  const [code, setCode] = useState(currentSnippet);
 
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
     editor.focus();
-
-    socket.on('code-change', (data) => {
-      if (editorRef.current && data.code !== editorRef.current.getValue()) {
-        editorRef.current.setValue(data.code);
-      }
-    });
   };
 
   const handleEditorChange = (value: string | undefined) => {
@@ -39,7 +43,8 @@ function App() {
       <Editor
         options={{ minimap: { enabled: false } }}
         height="90%"
-        defaultLanguage="javascript"
+        language={lang}
+        defaultLanguage={lang}
         value={code}
         onChange={handleEditorChange}
         onMount={handleEditorDidMount}
